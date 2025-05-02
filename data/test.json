@@ -1,0 +1,188 @@
+[
+  {
+    "_id" : "53e99809b7602d970201fa36",
+    "title" : "\\\"charlie's lab\\\"",
+    "authors" : [
+      {
+        "_id" : "53f4670cdabfaeb22f540094",
+        "name" : "Charles G. Gross",
+        "org" : "1Princeton University|c|",
+        "orgid" : "5f71b2811c455f439fe3c5b7"
+      }
+    ],
+    "venue" : {
+      "_id" : "55f9705fc35f4fb0d21cf4ea",
+      "type" : NumberInt(1),
+      "raw" : "Cognitive Neuroscience, Journal of  ",
+      "raw_zh" : ""
+    },
+    "year" : NumberInt(2014),
+    "keywords" : [
+
+    ],
+    "fos" : [
+      "Psychology",
+      "Art history"
+    ],
+    "n_citation" : NumberInt(0),
+    "page_start" : "1195",
+    "page_end" : "1195",
+    "lang" : "en",
+    "volume" : "26",
+    "issue" : "6",
+    "issn" : "0898-929X",
+    "isbn" : "",
+    "doi" : "10.1162/jocn_e_00626",
+    "pdf" : null,
+    "url" : [
+      "http://dx.doi.org/10.1162/jocn_e_00626",
+      "http://dl.acm.org/citation.cfm?id=2645332.2645333&coll=DL&dl=GUIDE&CFID=521633992&CFTOKEN=66607367&preflayout=flat",
+      "http://ieeexplore.ieee.org/xpl/articleDetails.jsp?tp=&arnumber=6818696"
+    ],
+    "abstract" : ""
+  },
+  {
+    "_id" : "53e99785b7602d9701f405f5",
+    "title" : "\"Genes\".",
+    "authors" : [
+      {
+        "_id" : "54057888dabfae91d3fe730e",
+        "name" : "Sonja J. Prohaska"
+      },
+      {
+        "_id" : "53f45728dabfaec09f209538",
+        "name" : "Peijuan Wang"
+      },
+      {
+        "_id" : "53f48a96dabfaeb1a7cd1cc5",
+        "name" : "Peter F. Stadler"
+      }
+    ],
+    "venue" : {
+      "_id" : "539ff927831432abcb57db4c",
+      "raw" : "Theory in Biosciences",
+      "raw_zh" : null,
+      "publisher" : null,
+      "type" : NumberInt(0)
+    },
+    "year" : NumberInt(2008),
+    "keywords" : [
+      "Functional Unit",
+      "Functional Product",
+      "Modern Molecular Biology",
+      "Heritable Material",
+      "Genetic Encode"
+    ],
+    "n_citation" : NumberInt(5),
+    "page_start" : "215",
+    "page_end" : "221",
+    "lang" : "en",
+    "volume" : "127",
+    "issue" : "3",
+    "issn" : "1431-7613",
+    "isbn" : "",
+    "doi" : "https://doi.org/10.1007/s12064-008-0025-0",
+    "pdf" : null,
+    "url" : [
+      "http://dx.doi.org/10.1007/s12064-008-0025-0",
+      "http://dx.doi.org/https://doi.org/10.1007/s12064-008-0025-0",
+      "https://link.springer.com/article/10.1007/s12064-008-0025-0"
+    ],
+    "abstract" : "In order to describe a cell at molecular level, a notion of a “gene” is neither necessary nor helpful. It is sufficient to consider the molecules (i.e., chromosomes, transcripts, proteins) and their interactions to describe cellular processes. The downside of the resulting high resolution is that it becomes very tedious to address features on the organismal and phenotypic levels with a language based on molecular terms. Looking for the missing link between biological disciplines dealing with different levels of biological organization, we suggest to return to the original intent behind the term “gene”. To this end, we propose to investigate whether a useful notion of “gene” can be constructed based on an underlying notion of function, and whether this can serve as the necessary link and embed the various distinct gene concepts of biological (sub)disciplines in a coherent theoretical framework. In reply to the Genon Theory recently put forward by Klaus Scherrer and Jürgen Jost in this journal, we shall discuss a general approach to assess a gene definition that should then be tested for its expressiveness and potential cross-disciplinary relevance."
+  },
+  {
+    "_id" : "53e99784b7602d9701f3e3f5",
+    "title" : "3GIO.",
+    "venue" : {
+      "type" : NumberInt(0)
+    },
+    "year" : NumberInt(2011),
+    "keywords" : [
+
+    ],
+    "n_citation" : NumberInt(0),
+    "lang" : "en"
+  },
+  {
+    "_id" : "53e99784b7602d9701f3e133",
+    "title" : "The relationship between canopy parameters and spectrum of winter wheat under different irrigations in Hebei Province.",
+    "authors" : [
+      {
+        "_id" : "53f45728dabfaec09f209538",
+        "name" : "Peijuan Wang XXX"
+      },
+      {
+        "_id" : "5601754345cedb3395e59457",
+        "name" : "Jiahua Zhang"
+      },
+      {
+        "_id" : "53f38438dabfae4b34a08928",
+        "name" : "Donghui Xie"
+      },
+      {
+        "_id" : "5601754345cedb3395e5945a",
+        "name" : "Yanyan Xu"
+      },
+      {
+        "_id" : "53f43d25dabfaeecd6995149",
+        "name" : "Yun Xu"
+      }
+    ],
+    "venue" : {
+      "_id" : "53a7297d20f7420be8bd4ae7",
+      "name_d" : "International Geoscience and Remote Sensing Symposium",
+      "type" : NumberInt(0),
+      "raw" : "IGARSS"
+    },
+    "year" : NumberInt(2011),
+    "keywords" : [
+      "canopy parameters",
+      "canopy spectrum",
+      "different soil water content control",
+      "winter wheat",
+      "irrigation",
+      "hydrology",
+      "radiometry",
+      "moisture",
+      "indexes",
+      "vegetation",
+      "indexation",
+      "dry weight",
+      "soil moisture",
+      "water content",
+      "indexing terms",
+      "spectrum",
+      "natural disaster"
+    ],
+    "fos" : [
+      "Agronomy",
+      "Moisture",
+      "Hydrology",
+      "Environmental science",
+      "Dry weight",
+      "Water content",
+      "Stomatal conductance",
+      "Transpiration",
+      "Irrigation",
+      "Soil water",
+      "Canopy"
+    ],
+    "n_citation" : NumberInt(0),
+    "page_start" : "1930",
+    "page_end" : "1933",
+    "lang" : "en",
+    "volume" : "null",
+    "issue" : "null",
+    "issn" : "",
+    "isbn" : "",
+    "doi" : "10.1109/IGARSS.2011.6049503",
+    "pdf" : null,
+    "url" : [
+      "http://dx.doi.org/10.1109/IGARSS.2011.6049503"
+    ],
+    "references" : [
+      "53e99784b7602d9701f3e3f5"
+    ],
+    "abstract" : "Drought is the first place in all the natural disasters in the world. It is especially serious in North China Plain. In this paper, different soil water content control levels at winter wheat growth stages are performed on Gucheng Ecological-Meteorological Integrated Observation Experiment Station of CAMS, China. Some canopy parameters, including growth conditions, dry weight, physiological parameters and hyperspectral reflectance, are measured from erecting stage to milk stage for winter wheat in 2009. The relationship between canopy parameters and soil relative moisture, canopy water content and water indices of winter wheat are established. The results show that some parameters, such as SPAD and dry weight of leaves, decrease with the increasing of soil relative moisture, while other parameters, including dry weight of caudexes, above ground dry weight, height, photosynthesis rate, intercellular CO 2 concentration, stomatal conductance and transpiration rate, increase corresponding to the soil relative moisture. Obvious linear relationship between stomatal conductance and transpiration rate is established with 45 samples, which R2 reaches to 0.6152. Finally, the fitting equations between canopy water content and water indices are regressed with b5, b6 and b7 of MODIS bands. The equations are best with b7 and worst with b5. So the fitting equations with b7 can be used to inverse the canopy water content of winter wheat using MODIS or other remote sensing images with similar bands range to MODIS in Hebei Province. © 2011 IEEE."
+  }
+]
