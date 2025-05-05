@@ -8,7 +8,6 @@ import (
 	"lab2-advdata/models"
 	"log"
 	"os"
-	"regexp"
 	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -30,11 +29,6 @@ func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error 
 	return nil
 }
 
-func cleanNumberInt(data []byte) []byte {
-	re := regexp.MustCompile(`NumberInt\((\d+)\)`)
-	return re.ReplaceAll(data, []byte("$1"))
-}
-
 func main() {
 
 	const PATH_FILE = "data/test.json"
@@ -44,10 +38,8 @@ func main() {
 		log.Fatalf("Erreur lecture fichier JSON: %v", err)
 	}
 
-	clean_file_bytes := cleanNumberInt(raw_file_byte)
-
 	var articles []models.Article
-	if err := json.Unmarshal(clean_file_bytes, &articles); err != nil {
+	if err := json.Unmarshal(raw_file_byte, &articles); err != nil {
 		log.Fatalf("Erreur parsing JSON: %v", err)
 	}
 
