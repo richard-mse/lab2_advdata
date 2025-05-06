@@ -29,8 +29,8 @@ func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error 
 
 func main() {
 	const PATH_FILE = "data/biggertest.json"
-
 	file, err := os.Open(PATH_FILE)
+
 	if err != nil {
 		log.Fatalf("Erreur lecture fichier JSON: %v", err)
 	}
@@ -38,7 +38,7 @@ func main() {
 
 	decoder := json.NewDecoder(file)
 
-	uri := "neo4j://localhost:7687"
+	uri := "neo4j://neo4j:7687"
 	username := "neo4j"
 	password := "testtest"
 

@@ -1,0 +1,26 @@
+version: '1'
+
+services:
+  neo4j:
+    image: neo4j:latest
+    container_name: advdaba_labo2
+    hostname: neo4j
+    ports:
+      - 7474:7474
+      - 7687:7687
+    environment:
+      - NEO4J_AUTH=neo4j/testtest
+    volumes:
+      - ${HOME}/neo4j/logs:/logs
+      - ${HOME}/neo4j/data:/data
+      - ${HOME}/neo4j/import:/var/lib/neo4j/import
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+
+  populating-script:
+    build: .
+    image: db_populator:v1.0
+    container_name: db_populator
+    hostname: populating-script
