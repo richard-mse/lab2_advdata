@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"lab2-advdata/graph"
 	"lab2-advdata/models"
@@ -28,9 +29,11 @@ func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error 
 }
 
 func main() {
+	limit := flag.Int("limit", -1, "Nombre maximal d'articles à insérer (par défaut : tous)")
+	flag.Parse()
+
 	const PATH_FILE = "data/biggertest.json"
 	file, err := os.Open(PATH_FILE)
-
 	if err != nil {
 		log.Fatalf("Erreur lecture fichier JSON: %v", err)
 	}
@@ -68,13 +71,18 @@ func main() {
 
 	count := 0
 	for decoder.More() {
+		if *limit >= 0 && count >= *limit {
+			break
+		}
+
 		var article models.Article
 		if err := decoder.Decode(&article); err != nil {
 			log.Fatalf("Erreur parsing article: %v", err)
 		}
+
 		graph.CreateArticleInGraph(ctx, session, article)
 		count++
 	}
 
-	fmt.Printf("Insertion terminée. %d articles traités.\n", count)
+	fmt.Printf("%d lines test inserted.\n", count)
 }

@@ -11,4 +11,4 @@ RUN go mod tidy
 
 ENTRYPOINT ["go", "run", "."]
 
-CMD [""]
+CMD ["--limit=1"]

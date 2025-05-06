@@ -3,7 +3,7 @@ version: '1'
 services:
   neo4j:
     image: neo4j:latest
-    container_name: advdaba_labo2
+    container_name: advdata_labo2
     hostname: neo4j
     ports:
       - 7474:7474
