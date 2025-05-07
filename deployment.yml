@@ -21,7 +21,7 @@ spec:
     - name: db-populator
       image: firgold/neo4j-populator:latest
       command: ["go", "run", "."]
-      args: ["--limit=1"]
+      args: ["--limit=100"]
       env:
         - name: NEO4J_AUTH
           value: neo4j/testtest

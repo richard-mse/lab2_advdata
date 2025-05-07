@@ -35,11 +35,11 @@ jobs:
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:latest
 
-      # - name: Patch deployment YAML with current timestamp
-      #   run: |
-      #     TIMESTAMP=$(date +%s)
-      #     sed "s|REDEPLOY_TIMESTAMP|$TIMESTAMP|" ./k8s/deployment.yml > ./k8s/deployment-patched.yml
+      - name: Patch deployment YAML with current timestamp
+        run: |
+          TIMESTAMP=$(date +%s)
+          sed "s|REDEPLOY_TIMESTAMP|$TIMESTAMP|" ./deployment.yml > ./deployment-patched.yml
 
-      # - name: Deploy to Kubernetes
-      #   run: |
-      #     kubectl -n $KUBE_NAMESPACE apply -f ./k8s/deployment-patched.yml --kubeconfig=.kube/config.yaml
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl -n $KUBE_NAMESPACE apply -f ./deployment-patched.yml --kubeconfig=.kube/config.yaml
