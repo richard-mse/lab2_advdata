@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/db_populator
+      DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/neo4j-populator
       KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
 
     steps:

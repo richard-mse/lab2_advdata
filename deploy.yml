@@ -19,7 +19,7 @@ spec:
           memory: "3Gi"
 
     - name: db-populator
-      image: db_populator:v1.0
+      image: firgold/neo4j-populator:latest
       command: ["go", "run", "."]
       args: ["--limit=1"]
       env:
