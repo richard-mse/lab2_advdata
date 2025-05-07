@@ -8,7 +8,7 @@ import (
 	"lab2-advdata/graph"
 	"lab2-advdata/models"
 	"log"
-	"os"
+	"net/http"
 	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -32,14 +32,15 @@ func main() {
 	limit := flag.Int("limit", -1, "Nombre maximal d'articles à insérer (par défaut : tous)")
 	flag.Parse()
 
-	const PATH_FILE = "data/biggertest.json"
-	file, err := os.Open(PATH_FILE)
-	if err != nil {
-		log.Fatalf("Erreur lecture fichier JSON: %v", err)
-	}
-	defer file.Close()
+	DATA_URL := "http://vmrum.isc.heia-fr.ch/dblpv14.json"
 
-	decoder := json.NewDecoder(file)
+	resp, err := http.Get(DATA_URL)
+	if err != nil {
+		log.Fatalf("Erreur requête GET JSON: %v", err)
+	}
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
 
 	uri := "neo4j://neo4j:7687"
 	username := "neo4j"

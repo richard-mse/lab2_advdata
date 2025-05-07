@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: neo4j-populator
+  labels:
+    app: neo4j-populator
+spec:
+  containers:
+    - name: neo4j
+      image: neo4j:latest
+      ports:
+        - containerPort: 7474
+        - containerPort: 7687
+      env:
+        - name: NEO4J_AUTH
+          value: "neo4j/testtest"
+      resources:
+        limits:
+          memory: "3Gi"
+
+    - name: db-populator
+      image: db_populator:v1.0
+      command: ["go", "run", "."]
+      args: ["--limit=1"]
+      env:
+        - name: NEO4J_AUTH
+          value: neo4j/testtest
