@@ -37,7 +37,6 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-
           kubectl -n $KUBE_NAMESPACE apply -f ./deployment-neo4j.yml --kubeconfig=.kube/config.yml
           kubectl -n $KUBE_NAMESPACE apply -f ./neo4j-service.yml --kubeconfig=.kube/config.yml
           kubectl -n $KUBE_NAMESPACE apply -f ./job-db-populator.yml --kubeconfig=.kube/config.yml
