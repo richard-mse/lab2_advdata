@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: neo4j-populator
+  name: neo4j
   labels:
-    app: neo4j-populator
+    app: neo4j
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: neo4j-populator
+      app: neo4j
   template:
     metadata:
       labels:
-        app: neo4j-populator
+        app: neo4j
     spec:
       containers:
         - name: neo4j
@@ -26,6 +26,3 @@ spec:
           resources:
             limits:
               memory: "3Gi"
-
-        - name: db-populator
-          image: firgold/neo4j-populator:latest

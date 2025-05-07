@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-populator
+  labels:
+    app: db-populator
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: db-populator
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: db-populator
+          image: firgold/neo4j-populator:latest
