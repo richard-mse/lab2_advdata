@@ -42,4 +42,4 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl -n $KUBE_NAMESPACE apply -f ./deployment-patched.yml --kubeconfig=.kube/config.yaml
+          kubectl -n $KUBE_NAMESPACE apply -f ./deployment-patched.yml --kubeconfig=.kube/config.yml
