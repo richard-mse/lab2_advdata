@@ -42,7 +42,7 @@ func main() {
 
 	decoder := json.NewDecoder(resp.Body)
 
-	uri := "neo4j://neo4j:7687"
+	uri := "neo4j://localhost:7687"
 	username := "neo4j"
 	password := "testtest"
 
