@@ -3,7 +3,7 @@ name: CI/CD - Build & Deploy
 on:
   push:
     branches:
-      - deploy_k8s
+      - main
   workflow_dispatch:
 
 jobs:

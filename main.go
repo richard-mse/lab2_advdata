@@ -29,6 +29,7 @@ func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error 
 }
 
 func main() {
+	start := time.Now()
 	limit := flag.Int("limit", -1, "Nombre maximal d'articles à insérer (par défaut : tous)")
 	flag.Parse()
 
@@ -84,6 +85,7 @@ func main() {
 		graph.CreateArticleInGraph(ctx, session, article)
 		count++
 	}
-
-	fmt.Printf("%d lines test inserted.\n", count)
+	duration := time.Since(start)
+	fmt.Printf("Execution time: %.2f seconds\n", duration.Seconds())
+	fmt.Printf("%d articles inserted.\n", count)
 }
