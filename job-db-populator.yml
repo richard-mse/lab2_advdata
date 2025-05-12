@@ -15,3 +15,13 @@ spec:
       containers:
         - name: db-populator
           image: firgold/neo4j-populator:latest
+          args: ["--limit=1000"]
+          env:
+            - name: NEO4J_URI
+              value: bolt://neo4j:7687
+            - name: NEO4J_USER
+              value: neo4j
+            - name: NEO4J_PASSWORD
+              value: testtest
+            - name: DATA_URL
+              value: http://vmrum.isc.heia-fr.ch/dblpv14.json

@@ -9,6 +9,7 @@ import (
 	"lab2-advdata/models"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -33,23 +34,41 @@ func main() {
 	limit := flag.Int("limit", -1, "Nombre maximal d'articles à insérer (par défaut : tous)")
 	flag.Parse()
 
-	DATA_URL := "http://vmrum.isc.heia-fr.ch/dblpv14.json"
+	// 📥 Lire les variables d'environnement
+	dataURL := os.Getenv("DATA_URL")
+	if dataURL == "" {
+		log.Fatal("DATA_URL non défini")
+	}
 
-	resp, err := http.Get(DATA_URL)
+	uri := os.Getenv("NEO4J_URI")
+	if uri == "" {
+		uri = "bolt://neo4j:7687"
+	}
+	username := os.Getenv("NEO4J_USER")
+	password := os.Getenv("NEO4J_PASSWORD")
+
+	resp, err := http.Get(dataURL)
 	if err != nil {
 		log.Fatalf("Erreur requête GET JSON: %v", err)
 	}
 	defer resp.Body.Close()
-
 	decoder := json.NewDecoder(resp.Body)
 
-	uri := "neo4j://neo4j:7687"
-	username := "neo4j"
-	password := "testtest"
-
-	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
+	var driver neo4j.DriverWithContext
+	const maxAttempts = 5
+	for i := 1; i <= maxAttempts; i++ {
+		driver, err = neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
+		if err == nil {
+			err = driver.VerifyConnectivity(context.Background())
+			if err == nil {
+				break
+			}
+		}
+		log.Printf("Tentative %d: échec de connexion à Neo4j : %v", i, err)
+		time.Sleep(5 * time.Second)
+	}
 	if err != nil {
-		log.Fatalf("Erreur driver Neo4j: %v", err)
+		log.Fatalf("Impossible de se connecter à Neo4j après %d tentatives: %v", maxAttempts, err)
 	}
 	defer driver.Close(context.Background())
 
