@@ -15,14 +15,20 @@ spec:
         app: neo4j
     spec:
       containers:
-        - name: neo4j
-          image: neo4j:latest
-          ports:
-            - containerPort: 7474
-            - containerPort: 7687
-          env:
-            - name: NEO4J_AUTH
-              value: "neo4j/testtest"
-          resources:
-            limits:
-              memory: "3Gi"
+      - name: neo4j
+        image: neo4j:latest
+        ports:
+          - containerPort: 7474
+          - containerPort: 7687
+        env:
+          - name: NEO4J_AUTH
+            value: "neo4j/testtest"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 7474
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          limits:
+            memory: "3Gi"
