@@ -34,7 +34,6 @@ func main() {
 	limit := flag.Int("limit", -1, "Nombre maximal d'articles à insérer (par défaut : tous)")
 	flag.Parse()
 
-	// 📥 Lire les variables d'environnement
 	dataURL := os.Getenv("DATA_URL")
 	if dataURL == "" {
 		log.Fatal("DATA_URL non défini")
