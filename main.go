@@ -16,6 +16,8 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
+const batchSize = 100
+
 func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error {
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
 		query := `MATCH (n) DETACH DELETE n`
@@ -75,59 +77,75 @@ func sanitizeMongoJSON(inputPath, outputPath string) error {
 
 func decodeAndSend(limit int) error {
 	uri := os.Getenv("NEO4J_URI")
+	if uri == "" {
+		uri = "bolt://graphdb:7687"
+	}
 	username := os.Getenv("NEO4J_USER")
 	password := os.Getenv("NEO4J_PASSWORD")
 
 	file, err := os.Open("data/sanitized.json")
 	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
+		return err
 	}
 	defer file.Close()
-
 	decoder := json.NewDecoder(file)
 
-	var driver neo4j.DriverWithContext
-	driver, err = neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
-
+	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
 	if err != nil {
-		return fmt.Errorf("cannot create Neo4j driver: %w", err)
+		return fmt.Errorf("cannot create driver: %w", err)
 	}
 	defer driver.Close(context.Background())
 
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
-	defer cancel()
+	// Vérif de connectivité
+	if err := driver.VerifyConnectivity(context.Background()); err != nil {
+		return fmt.Errorf("neo4j unreachable: %w", err)
+	}
 
-	session := driver.NewSession(ctx, neo4j.SessionConfig{
+	session := driver.NewSession(context.Background(), neo4j.SessionConfig{
 		AccessMode:   neo4j.AccessModeWrite,
 		DatabaseName: "neo4j",
 	})
-	defer session.Close(ctx)
+	defer session.Close(context.Background())
 
-	if err := ClearDatabase(ctx, session); err != nil {
-		return fmt.Errorf("Erreur nettoyage base")
+	if err := ClearDatabase(context.Background(), session); err != nil {
+		return err
 	}
 
-	t, err := decoder.Token()
-	if err != nil || t != json.Delim('[') {
-		fmt.Errorf("Format JSON invalide")
+	// Lit le début du tableau JSON
+	if tok, err := decoder.Token(); err != nil || tok != json.Delim('[') {
+		return fmt.Errorf("invalid JSON array")
 	}
-	fmt.Println("hello world")
+
+	var batch []models.Article
 	count := 0
+
 	for decoder.More() {
 		if limit >= 0 && count >= limit {
 			break
 		}
-
-		var article models.Article
-		if err := decoder.Decode(&article); err != nil {
+		var art models.Article
+		if err := decoder.Decode(&art); err != nil {
 			return err
 		}
-
-		graph.CreateArticleInGraph(ctx, session, article)
+		batch = append(batch, art)
 		count++
-	}
-	fmt.Printf("%d articles inserted.\n", count)
 
+		if len(batch) >= batchSize {
+			if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
+				return err
+			}
+			batch = batch[:0] // reset
+		}
+	}
+
+	// envoyer le reste
+	if len(batch) > 0 {
+		if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("%d articles inserted.\n", count)
 	return nil
 }
 
