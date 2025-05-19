@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"lab2-advdata/graph"
+	"lab2-advdata/models"
 	"log"
 	"os"
 	"regexp"
@@ -105,25 +107,25 @@ func decodeAndSend(limit int) error {
 		return fmt.Errorf("Erreur nettoyage base")
 	}
 
-	// t, err := decoder.Token()
-	// if err != nil || t != json.Delim('[') {
-	// 	fmt.Errorf("Format JSON invalide")
-	// }
+	t, err := decoder.Token()
+	if err != nil || t != json.Delim('[') {
+		fmt.Errorf("Format JSON invalide")
+	}
 	fmt.Println("hello world")
 	count := 0
-	// for decoder.More() {
-	// 	if limit >= 0 && count >= limit {
-	// 		break
-	// 	}
+	for decoder.More() {
+		if limit >= 0 && count >= limit {
+			break
+		}
 
-	// 	var article models.Article
-	// 	if err := decoder.Decode(&article); err != nil {
-	// 		return err
-	// 	}
+		var article models.Article
+		if err := decoder.Decode(&article); err != nil {
+			return err
+		}
 
-	// 	graph.CreateArticleInGraph(ctx, session, article)
-	// 	count++
-	// }
+		graph.CreateArticleInGraph(ctx, session, article)
+		count++
+	}
 	fmt.Printf("%d articles inserted.\n", count)
 
 	return nil

@@ -21,7 +21,7 @@ spec:
       containers:
         - name: db-populator
           image: firgold/neo4j-populator:latest
-          # args: ["--limit=1000"]
+          args: ["--limit=1"]
           env:
             - name: NEO4J_URI
               value: bolt://graphdb:7687
