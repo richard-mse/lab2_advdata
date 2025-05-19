@@ -23,9 +23,9 @@ spec:
         env:
           - name: NEO4J_AUTH
             value: "neo4j/testtest"
-          - name: NEO4J_server.config.strict_validation.enabled
+          - name: NEO4J_server__config__strict__validation__enabled
             value: "false"
-            
+
         readinessProbe:
           httpGet:
             path: /
