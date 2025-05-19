@@ -35,6 +35,15 @@ jobs:
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:latest
 
+      - name: Delete old resources
+        env:
+          KUBECONFIG: .kube/config.yml
+        run: |
+          kubectl -n $KUBE_NAMESPACE delete -f ./deployment-neo4j.yml --kubeconfig=$KUBECONFIG --ignore-not-found
+          kubectl -n $KUBE_NAMESPACE delete -f ./neo4j-service.yml   --kubeconfig=$KUBECONFIG --ignore-not-found
+          kubectl -n $KUBE_NAMESPACE delete -f ./job-db-populator.yml --kubeconfig=$KUBECONFIG --ignore-not-found
+
+
       - name: Deploy to Kubernetes
         run: |
           kubectl -n $KUBE_NAMESPACE apply -f ./deployment-neo4j.yml --kubeconfig=.kube/config.yml
