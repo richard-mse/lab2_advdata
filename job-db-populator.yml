@@ -12,6 +12,12 @@ spec:
         app: db-populator
     spec:
       restartPolicy: Never
+      initContainers:
+
+      - name: wait-neo4j
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z graphdb 7687; do echo "⏳ waiting…"; sleep 3; done']
+      
       containers:
         - name: db-populator
           image: firgold/neo4j-populator:latest

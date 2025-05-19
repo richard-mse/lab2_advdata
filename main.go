@@ -87,15 +87,15 @@ func decodeAndSend(limit int) error {
 	decoder := json.NewDecoder(file)
 
 	var driver neo4j.DriverWithContext
-
 	driver, err = neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
 
+	if err != nil {
+		return fmt.Errorf("cannot create Neo4j driver: %w", err)
+	}
 	defer driver.Close(context.Background())
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
-
-	fmt.Println("hello world")
 
 	session := driver.NewSession(ctx, neo4j.SessionConfig{
 		AccessMode:   neo4j.AccessModeWrite,
@@ -111,7 +111,7 @@ func decodeAndSend(limit int) error {
 	if err != nil || t != json.Delim('[') {
 		fmt.Errorf("Format JSON invalide")
 	}
-
+	fmt.Println("hello world")
 	count := 0
 	for decoder.More() {
 		if limit >= 0 && count >= limit {
