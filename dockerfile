@@ -5,11 +5,9 @@ WORKDIR /app
 ADD graph/ graph/
 ADD models/ models/
 
-ADD http://vmrum.isc.heia-fr.ch/dblpv13.json data/unsanitized.json
+COPY go.mod go.sum main.go entrypoint.sh ./
 
-COPY go.mod go.sum main.go ./
-RUN go mod tidy
+RUN go mod tidy && \
+chmod +x entrypoint.sh
 
-# ENTRYPOINT ["go", "run", "."]
-
-CMD [""]
+CMD ["/bin/bash", "entrypoint.sh"]
