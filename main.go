@@ -75,9 +75,6 @@ func sanitizeMongoJSON(inputPath, outputPath string) error {
 
 func decodeAndSend(limit int) error {
 	uri := os.Getenv("NEO4J_URI")
-	if uri == "" {
-		uri = "bolt://neo4j:7687"
-	}
 	username := os.Getenv("NEO4J_USER")
 	password := os.Getenv("NEO4J_PASSWORD")
 

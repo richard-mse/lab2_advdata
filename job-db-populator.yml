@@ -18,7 +18,7 @@ spec:
           # args: ["--limit=1000"]
           env:
             - name: NEO4J_URI
-              value: bolt://neo4j:7687
+              value: bolt://graphdb:7687
             - name: NEO4J_USER
               value: neo4j
             - name: NEO4J_PASSWORD
