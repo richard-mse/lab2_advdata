@@ -23,5 +23,3 @@ spec:
               value: neo4j
             - name: NEO4J_PASSWORD
               value: testtest
-            - name: DATA_URL
-              value: http://vmrum.isc.heia-fr.ch/dblpv14.json
