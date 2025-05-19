@@ -141,11 +141,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	step := time.Since(start)
+	fmt.Printf("Sanitization time: %.2f seconds\n", step.Seconds())
+
 	err = decodeAndSend(limit)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	step2 := time.Since(start)
 	duration := time.Since(start)
+
+	fmt.Printf("Population time: %.2f seconds\n", step2.Seconds()-step.Seconds())
 	fmt.Printf("Execution time: %.2f seconds\n", duration.Seconds())
 }
