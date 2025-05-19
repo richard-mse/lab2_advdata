@@ -87,26 +87,15 @@ func decodeAndSend(limit int) error {
 	decoder := json.NewDecoder(file)
 
 	var driver neo4j.DriverWithContext
-	const maxAttempts = 5
-	for i := 1; i <= maxAttempts; i++ {
-		driver, err = neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
-		if err == nil {
-			err = driver.VerifyConnectivity(context.Background())
-			if err == nil {
-				break
-			}
-		}
-		log.Printf("Tentative %d: échec de connexion à Neo4j : %v", i, err)
-		time.Sleep(5 * time.Second)
-	}
-	if err != nil {
-		return fmt.Errorf("Impossible de se connecter à Neo4j après %d tentatives: %v", maxAttempts, err)
-	}
+
+	driver, err = neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
 
 	defer driver.Close(context.Background())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
+
+	fmt.Println("hello world")
 
 	session := driver.NewSession(ctx, neo4j.SessionConfig{
 		AccessMode:   neo4j.AccessModeWrite,
