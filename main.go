@@ -133,7 +133,7 @@ func decodeAndSend(limit int) error {
 
 func main() {
 	start := time.Now()
-	limit := flag.Int("limit", -1, "Nombre maximal d'articles à insérer (par défaut : tous)")
+	limit := 10
 	flag.Parse()
 
 	err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json")
@@ -141,7 +141,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = decodeAndSend(*limit)
+	err = decodeAndSend(limit)
 	if err != nil {
 		log.Fatal(err)
 	}
