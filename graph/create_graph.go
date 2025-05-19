@@ -7,18 +7,15 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
+// CreateArticlesBatchInGraph crée/maj plusieurs articles, authors et références
+// en une seule transaction Cypher optimisée.
 func CreateArticlesBatchInGraph(ctx context.Context, session neo4j.SessionWithContext, articles []models.Article) error {
-	// Prépare la liste de maps pour UNWIND articles,
-	// avec authors et refs imbriqués.
+	// Préparer le paramètre UNWIND articles
 	articlesParam := make([]map[string]any, len(articles))
 	for i, art := range articles {
-		// transforme []Author en []map[string]any
 		authList := make([]map[string]any, len(art.Authors))
 		for j, au := range art.Authors {
-			authList[j] = map[string]any{
-				"id":   au.ID,
-				"name": au.Name,
-			}
+			authList[j] = map[string]any{"id": au.ID, "name": au.Name}
 		}
 		articlesParam[i] = map[string]any{
 			"id":      art.ID,
@@ -30,16 +27,16 @@ func CreateArticlesBatchInGraph(ctx context.Context, session neo4j.SessionWithCo
 
 	const query = `
 UNWIND $articles AS doc
-  MERGE (a:Article { _id: doc.id })
+  MERGE (a:Article {_id: doc.id})
   SET   a.title = doc.title
   WITH a, doc
   UNWIND doc.authors AS aut
-    MERGE (au:Author { _id: aut.id })
+    MERGE (au:Author {_id: aut.id})
     SET   au.name = aut.name
     MERGE (au)-[:AUTHORED]->(a)
   WITH a, doc
   UNWIND doc.refs AS refId
-    MERGE (r:Article { _id: refId })
+    MERGE (r:Article {_id: refId})
     MERGE (a)-[:CITES]->(r)
 `
 

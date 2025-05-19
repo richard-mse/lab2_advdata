@@ -16,12 +16,11 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-const batchSize = 100
+const batchSize = 500
 
 func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error {
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
-		query := `MATCH (n) DETACH DELETE n`
-		_, err := tx.Run(ctx, query, nil)
+		_, err := tx.Run(ctx, `MATCH (n) DETACH DELETE n`, nil)
 		return nil, err
 	})
 	if err != nil {
@@ -33,46 +32,35 @@ func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error 
 }
 
 func sanitizeMongoJSON(inputPath, outputPath string) error {
-
 	reNumberInt := regexp.MustCompile(`NumberInt\((\-?\d+)\)`)
-
-	inputFile, err := os.Open(inputPath)
+	inFile, err := os.Open(inputPath)
 	if err != nil {
-		return fmt.Errorf("failed to open input file: %w", err)
+		return fmt.Errorf("failed to open input: %w", err)
 	}
-	defer inputFile.Close()
+	defer inFile.Close()
 
-	outputFile, err := os.Create(outputPath)
+	outFile, err := os.Create(outputPath)
 	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
+		return fmt.Errorf("failed to create output: %w", err)
 	}
-	defer outputFile.Close()
+	defer outFile.Close()
 
-	scanner := bufio.NewScanner(inputFile)
-
+	scanner := bufio.NewScanner(inFile)
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, 10*1024*1024)
-
-	writer := bufio.NewWriterSize(outputFile, 64*1024) // Buffered writer (64KB)
+	writer := bufio.NewWriterSize(outFile, 64*1024)
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		sanitizedLine := reNumberInt.ReplaceAllString(line, "$1")
-		_, err := writer.WriteString(sanitizedLine + "\n")
-		if err != nil {
-			return fmt.Errorf("failed to write to output file: %w", err)
+		sanitized := reNumberInt.ReplaceAllString(line, "$1")
+		if _, err := writer.WriteString(sanitized + "\n"); err != nil {
+			return err
 		}
 	}
-
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error while scanning input file: %w", err)
+		return err
 	}
-
-	if err := writer.Flush(); err != nil {
-		return fmt.Errorf("error while flushing output file: %w", err)
-	}
-
-	return nil
+	return writer.Flush()
 }
 
 func decodeAndSend(limit int) error {
@@ -96,7 +84,6 @@ func decodeAndSend(limit int) error {
 	}
 	defer driver.Close(context.Background())
 
-	// Vérif de connectivité
 	if err := driver.VerifyConnectivity(context.Background()); err != nil {
 		return fmt.Errorf("neo4j unreachable: %w", err)
 	}
@@ -107,11 +94,12 @@ func decodeAndSend(limit int) error {
 	})
 	defer session.Close(context.Background())
 
+	// On purge la base au démarrage
 	if err := ClearDatabase(context.Background(), session); err != nil {
 		return err
 	}
 
-	// Lit le début du tableau JSON
+	// Lire début du JSON array
 	if tok, err := decoder.Token(); err != nil || tok != json.Delim('[') {
 		return fmt.Errorf("invalid JSON array")
 	}
@@ -130,15 +118,16 @@ func decodeAndSend(limit int) error {
 		batch = append(batch, art)
 		count++
 
+		// Dès que le lot est plein, on l’envoie
 		if len(batch) >= batchSize {
 			if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
 				return err
 			}
-			batch = batch[:0] // reset
+			batch = batch[:0]
 		}
 	}
 
-	// envoyer le reste
+	// Il reste peut-être un lot incomplet en fin de fichier
 	if len(batch) > 0 {
 		if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
 			return err
@@ -151,19 +140,15 @@ func decodeAndSend(limit int) error {
 
 func main() {
 	start := time.Now()
-	limit := 10
+	limit := flag.Int("limit", -1, "max articles to insert")
 	flag.Parse()
 
-	err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json")
-	if err != nil {
+	if err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json"); err != nil {
+		log.Fatal(err)
+	}
+	if err := decodeAndSend(*limit); err != nil {
 		log.Fatal(err)
 	}
 
-	err = decodeAndSend(limit)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	duration := time.Since(start)
-	fmt.Printf("Execution time: %.2f seconds\n", duration.Seconds())
+	fmt.Printf("Execution time: %.2f seconds\n", time.Since(start).Seconds())
 }
