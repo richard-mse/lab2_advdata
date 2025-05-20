@@ -120,7 +120,7 @@ func decodeAndSend(limit int) error {
 
 		// Dès que le lot est plein, on l’envoie
 		if len(batch) >= batchSize {
-			if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
+			if err := graph.CreateGraphFromArticles(context.Background(), session, batch); err != nil {
 				return err
 			}
 			batch = batch[:0]
@@ -129,7 +129,7 @@ func decodeAndSend(limit int) error {
 
 	// Il reste peut-être un lot incomplet en fin de fichier
 	if len(batch) > 0 {
-		if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
+		if err := graph.CreateGraphFromArticles(context.Background(), session, batch); err != nil {
 			return err
 		}
 	}
@@ -140,7 +140,7 @@ func decodeAndSend(limit int) error {
 
 func main() {
 	start := time.Now()
-	limit := flag.Int("limit", -1, "max articles to insert")
+	limit := 10
 	flag.Parse()
 
 	if err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json"); err != nil {
@@ -149,7 +149,7 @@ func main() {
 	step := time.Since(start)
 	fmt.Printf("Sanitization time: %.2f seconds\n", step.Seconds())
 
-	err = decodeAndSend(limit)
+	err := decodeAndSend(limit)
 	if err != nil {
 		log.Fatal(err)
 	}
