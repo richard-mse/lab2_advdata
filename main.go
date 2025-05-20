@@ -15,7 +15,7 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-const batchSize = 5
+const batchSize = 100
 
 func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error {
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
@@ -107,7 +107,7 @@ func decodeAndSend(limit int) error {
 	count := 0
 
 	for decoder.More() {
-		if limit >= 0 && count >= limit {
+		if limit > 0 && count >= limit {
 			break
 		}
 		var art models.Article
@@ -138,7 +138,7 @@ func decodeAndSend(limit int) error {
 
 func main() {
 	start := time.Now()
-	limit := 10
+	limit := -1
 
 	if err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json"); err != nil {
 		log.Fatal(err)
