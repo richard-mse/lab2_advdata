@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"lab2-advdata/graph"
 	"lab2-advdata/models"
@@ -16,7 +15,7 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-const batchSize = 500
+const batchSize = 5
 
 func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error {
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
@@ -118,8 +117,7 @@ func decodeAndSend(limit int) error {
 		batch = append(batch, art)
 		count++
 
-		// Dès que le lot est plein, on l’envoie
-		if len(batch) >= batchSize {
+		if len(batch) == batchSize {
 			if err := graph.CreateGraphFromArticles(context.Background(), session, batch); err != nil {
 				return err
 			}
@@ -141,7 +139,6 @@ func decodeAndSend(limit int) error {
 func main() {
 	start := time.Now()
 	limit := 10
-	flag.Parse()
 
 	if err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json"); err != nil {
 		log.Fatal(err)
