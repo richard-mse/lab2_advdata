@@ -16,10 +16,11 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
+const batchSize = 500
+
 func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error {
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
-		query := `MATCH (n) DETACH DELETE n`
-		_, err := tx.Run(ctx, query, nil)
+		_, err := tx.Run(ctx, `MATCH (n) DETACH DELETE n`, nil)
 		return nil, err
 	})
 	if err != nil {
@@ -31,116 +32,120 @@ func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error 
 }
 
 func sanitizeMongoJSON(inputPath, outputPath string) error {
-
 	reNumberInt := regexp.MustCompile(`NumberInt\((\-?\d+)\)`)
-
-	inputFile, err := os.Open(inputPath)
+	inFile, err := os.Open(inputPath)
 	if err != nil {
-		return fmt.Errorf("failed to open input file: %w", err)
+		return fmt.Errorf("failed to open input: %w", err)
 	}
-	defer inputFile.Close()
+	defer inFile.Close()
 
-	outputFile, err := os.Create(outputPath)
+	outFile, err := os.Create(outputPath)
 	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
+		return fmt.Errorf("failed to create output: %w", err)
 	}
-	defer outputFile.Close()
+	defer outFile.Close()
 
-	scanner := bufio.NewScanner(inputFile)
-
+	scanner := bufio.NewScanner(inFile)
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, 10*1024*1024)
-
-	writer := bufio.NewWriterSize(outputFile, 64*1024) // Buffered writer (64KB)
+	writer := bufio.NewWriterSize(outFile, 64*1024)
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		sanitizedLine := reNumberInt.ReplaceAllString(line, "$1")
-		_, err := writer.WriteString(sanitizedLine + "\n")
-		if err != nil {
-			return fmt.Errorf("failed to write to output file: %w", err)
+		sanitized := reNumberInt.ReplaceAllString(line, "$1")
+		if _, err := writer.WriteString(sanitized + "\n"); err != nil {
+			return err
 		}
 	}
-
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error while scanning input file: %w", err)
+		return err
 	}
-
-	if err := writer.Flush(); err != nil {
-		return fmt.Errorf("error while flushing output file: %w", err)
-	}
-
-	return nil
+	return writer.Flush()
 }
 
 func decodeAndSend(limit int) error {
 	uri := os.Getenv("NEO4J_URI")
+	if uri == "" {
+		uri = "bolt://graphdb:7687"
+	}
 	username := os.Getenv("NEO4J_USER")
 	password := os.Getenv("NEO4J_PASSWORD")
 
 	file, err := os.Open("data/sanitized.json")
 	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
+		return err
 	}
 	defer file.Close()
-
 	decoder := json.NewDecoder(file)
 
-	var driver neo4j.DriverWithContext
-	driver, err = neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
-
+	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
 	if err != nil {
-		return fmt.Errorf("cannot create Neo4j driver: %w", err)
+		return fmt.Errorf("cannot create driver: %w", err)
 	}
 	defer driver.Close(context.Background())
 
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
-	defer cancel()
+	if err := driver.VerifyConnectivity(context.Background()); err != nil {
+		return fmt.Errorf("neo4j unreachable: %w", err)
+	}
 
-	session := driver.NewSession(ctx, neo4j.SessionConfig{
+	session := driver.NewSession(context.Background(), neo4j.SessionConfig{
 		AccessMode:   neo4j.AccessModeWrite,
 		DatabaseName: "neo4j",
 	})
-	defer session.Close(ctx)
+	defer session.Close(context.Background())
 
-	if err := ClearDatabase(ctx, session); err != nil {
-		return fmt.Errorf("Erreur nettoyage base")
+	// On purge la base au démarrage
+	if err := ClearDatabase(context.Background(), session); err != nil {
+		return err
 	}
 
-	t, err := decoder.Token()
-	if err != nil || t != json.Delim('[') {
-		fmt.Errorf("Format JSON invalide")
+	// Lire début du JSON array
+	if tok, err := decoder.Token(); err != nil || tok != json.Delim('[') {
+		return fmt.Errorf("invalid JSON array")
 	}
-	fmt.Println("hello world")
+
+	var batch []models.Article
 	count := 0
+
 	for decoder.More() {
 		if limit >= 0 && count >= limit {
 			break
 		}
-
-		var article models.Article
-		if err := decoder.Decode(&article); err != nil {
+		var art models.Article
+		if err := decoder.Decode(&art); err != nil {
 			return err
 		}
-
-		graph.CreateArticleInGraph(ctx, session, article)
+		batch = append(batch, art)
 		count++
-	}
-	fmt.Printf("%d articles inserted.\n", count)
 
+		// Dès que le lot est plein, on l’envoie
+		if len(batch) >= batchSize {
+			if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
+				return err
+			}
+			batch = batch[:0]
+		}
+	}
+
+	// Il reste peut-être un lot incomplet en fin de fichier
+	if len(batch) > 0 {
+		if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("%d articles inserted.\n", count)
 	return nil
 }
 
 func main() {
 	start := time.Now()
-	limit := 10
+	limit := flag.Int("limit", -1, "max articles to insert")
 	flag.Parse()
 
-	err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json")
-	if err != nil {
+	if err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json"); err != nil {
 		log.Fatal(err)
 	}
-
 	step := time.Since(start)
 	fmt.Printf("Sanitization time: %.2f seconds\n", step.Seconds())
 
