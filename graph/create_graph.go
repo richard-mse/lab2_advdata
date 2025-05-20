@@ -7,38 +7,30 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-// CreateArticlesBatchInGraph crée/maj plusieurs articles, authors et références
-// en une seule transaction Cypher optimisée.
-func CreateGraphFromRawArticles(ctx context.Context, session neo4j.SessionWithContext, batch []map[string]interface{}) error {
+func CreateArticlesBatchInGraph(ctx context.Context, session neo4j.SessionWithContext, batch []map[string]interface{}) error {
 	if len(batch) == 0 {
 		log.Println("No articles to process.")
 		return nil
 	}
 
-	// Single write transaction for the whole batch
-	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
-		query := `
-UNWIND $batch AS article
-// Merge Article node and set title
-MERGE (a:Article {_id: article.id})
-SET a.title = article.title
+	const query = `
+	UNWIND $batch AS doc
+	MERGE (a:Article {_id: doc.id})
+	SET a.title = doc.title
 
-// Merge each Author and create AUTHORED relationship
-WITH article, a
-UNWIND article.authors AS au
-MERGE (author:Author {_id: au.id})
-SET author.name = au.name
-MERGE (author)-[:AUTHORED]->(a)
+	FOREACH (aut IN doc.authors |
+	MERGE (au:Author {_id: aut.id})
+	SET au.name = aut.name
+	MERGE (au)-[:AUTHORED]->(a)
+	)
 
-// Create CITES relationships for references
-WITH article, a
-UNWIND article.references AS refId
-MERGE (ref:Article {_id: refId})
-MERGE (a)-[:CITES]->(ref)
-`
-		params := map[string]interface{}{"batch": batch}
-		_, err := tx.Run(ctx, query, params)
-		return nil, err
+	FOREACH (refId IN doc.references |
+	MERGE (r:Article {_id: refId})
+	MERGE (a)-[:CITES]->(r)
+	)
+	`
+	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		return tx.Run(ctx, query, map[string]interface{}{"batch": batch})
 	})
 	if err != nil {
 		log.Printf("Batch write failed: %v", err)
