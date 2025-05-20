@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: graphdb-ingress
+spec:
+  ingressClassName: nginx-ext
+  rules:
+  - host: advdata-labo2.kube-ext.isc.heia-fr.ch
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: graphdb
+            port:
+              number: 7474
