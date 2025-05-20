@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"lab2-advdata/graph"
-	"lab2-advdata/models"
 	"log"
 	"os"
 	"regexp"
@@ -75,7 +74,7 @@ func decodeAndSend(limit int) error {
 		return err
 	}
 	defer file.Close()
-	decoder := json.NewDecoder(file)
+	dec := json.NewDecoder(file)
 
 	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
 	if err != nil {
@@ -93,41 +92,105 @@ func decodeAndSend(limit int) error {
 	})
 	defer session.Close(context.Background())
 
-	// On purge la base au démarrage
+	// Purge la base
 	if err := ClearDatabase(context.Background(), session); err != nil {
 		return err
 	}
 
-	// Lire début du JSON array
-	if tok, err := decoder.Token(); err != nil || tok != json.Delim('[') {
-		return fmt.Errorf("invalid JSON array")
+	// Vérifier début de tableau JSON
+	if tok, err := dec.Token(); err != nil || tok != json.Delim('[') {
+		return fmt.Errorf("invalid JSON array start")
 	}
 
-	var batch []models.Article
-	count := 0
+	var (
+		count int
+		batch []map[string]interface{}
+	)
 
-	for decoder.More() {
+	for dec.More() {
 		if limit > 0 && count >= limit {
 			break
 		}
-		var art models.Article
-		if err := decoder.Decode(&art); err != nil {
-			return err
+		// Variables pour champs désirés
+		var (
+			id         string
+			title      string
+			authors    []map[string]interface{}
+			references []string
+		)
+		// Début de l'objet article
+		if tok, err := dec.Token(); err != nil || tok != json.Delim('{') {
+			return fmt.Errorf("expected object start, got %v, err: %w", tok, err)
 		}
-		batch = append(batch, art)
+		// Lecture champ par champ
+		for dec.More() {
+			keyTok, err := dec.Token()
+			if err != nil {
+				return err
+			}
+			key := keyTok.(string)
+			switch key {
+			case "_id":
+				if err := dec.Decode(&id); err != nil {
+					return err
+				}
+			case "title":
+				if err := dec.Decode(&title); err != nil {
+					return err
+				}
+			case "authors":
+				// Struct temporaire pour auteurs
+				var tmp []struct {
+					ID   string `json:"_id"`
+					Name string `json:"name"`
+				}
+				if err := dec.Decode(&tmp); err != nil {
+					return err
+				}
+				authors = make([]map[string]interface{}, len(tmp))
+				for i, a := range tmp {
+					authors[i] = map[string]interface{}{"id": a.ID, "name": a.Name}
+				}
+			case "references":
+				if err := dec.Decode(&references); err != nil {
+					return err
+				}
+			default:
+				// Ignorer les champs non utilisés
+				var skip json.RawMessage
+				if err := dec.Decode(&skip); err != nil {
+					return err
+				}
+			}
+		}
+		// Fin de l'objet
+		if tok, err := dec.Token(); err != nil || tok != json.Delim('}') {
+			return fmt.Errorf("expected object end, got %v, err: %w", tok, err)
+		}
+
+		// Ajouter au batch
+		batch = append(batch, map[string]interface{}{
+			"id":         id,
+			"title":      title,
+			"authors":    authors,
+			"references": references,
+		})
 		count++
 
 		if len(batch) == batchSize {
-			if err := graph.CreateGraphFromArticles(context.Background(), session, batch); err != nil {
+			if err := graph.CreateGraphFromRawArticles(context.Background(), session, batch); err != nil {
 				return err
 			}
 			batch = batch[:0]
 		}
 	}
-
-	// Il reste peut-être un lot incomplet en fin de fichier
+	// Fin du tableau JSON
+	if tok, err := dec.Token(); err != nil || tok != json.Delim(']') {
+		return fmt.Errorf("invalid JSON array end")
+	}
+	// Dernier batch
 	if len(batch) > 0 {
-		if err := graph.CreateGraphFromArticles(context.Background(), session, batch); err != nil {
+		if err := graph.CreateGraphFromRawArticles(context.Background(), session, batch); err != nil {
 			return err
 		}
 	}
@@ -138,7 +201,7 @@ func decodeAndSend(limit int) error {
 
 func main() {
 	start := time.Now()
-	limit := -1
+	limit := 100
 
 	if err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json"); err != nil {
 		log.Fatal(err)

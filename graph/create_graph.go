@@ -2,7 +2,6 @@ package graph
 
 import (
 	"context"
-	"lab2-advdata/models"
 	"log"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -10,31 +9,10 @@ import (
 
 // CreateArticlesBatchInGraph crée/maj plusieurs articles, authors et références
 // en une seule transaction Cypher optimisée.
-func CreateGraphFromArticles(ctx context.Context, session neo4j.SessionWithContext, articles []models.Article) error {
-	if len(articles) == 0 {
+func CreateGraphFromRawArticles(ctx context.Context, session neo4j.SessionWithContext, batch []map[string]interface{}) error {
+	if len(batch) == 0 {
 		log.Println("No articles to process.")
 		return nil
-	}
-
-	// Prepare a batch parameter: slice of maps matching each article's fields
-	batch := make([]map[string]interface{}, 0, len(articles))
-	for _, art := range articles {
-		// Build authors slice of maps
-		authorMaps := make([]map[string]interface{}, 0, len(art.Authors))
-		for _, au := range art.Authors {
-			authorMaps = append(authorMaps, map[string]interface{}{
-				"id":   au.ID,
-				"name": au.Name,
-			})
-		}
-
-		// Append article map
-		batch = append(batch, map[string]interface{}{
-			"id":         art.ID,
-			"title":      art.Title,
-			"authors":    authorMaps,
-			"references": art.References,
-		})
 	}
 
 	// Single write transaction for the whole batch
