@@ -120,13 +120,17 @@ func decodeAndSend(limit int) error {
 		title, _ := raw["title"].(string)
 
 		// Authors
-		authorsRaw, _ := raw["authors"].([]interface{})
-		authors := make([]map[string]interface{}, len(authorsRaw))
-		for i, ai := range authorsRaw {
-			aMap := ai.(map[string]interface{})
-			authors[i] = map[string]interface{}{
-				"id":   aMap["_id"].(string),
-				"name": aMap["name"].(string),
+		authors := make([]map[string]interface{}, 0)
+		if rawAuth, ok := raw["authors"].([]interface{}); ok {
+			for _, ai := range rawAuth {
+				if aMap, ok := ai.(map[string]interface{}); ok {
+					idVal, hasID := aMap["_id"].(string)
+					nameVal, hasName := aMap["name"].(string)
+					// n'ajoute que si à la fois _id et name sont présents
+					if hasID && hasName && idVal != "" && nameVal != "" {
+						authors = append(authors, map[string]interface{}{"id": idVal, "name": nameVal})
+					}
+				}
 			}
 		}
 
