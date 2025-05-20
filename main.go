@@ -101,10 +101,13 @@ func decodeAndSend(limit int) error {
 	if err := ClearDatabase(context.Background(), session); err != nil {
 		return err
 	}
+	log.Println("Clean database.")
 
 	var (
-		count int
-		batch []map[string]interface{}
+		count          int
+		batch          []map[string]interface{}
+		totalDuration  time.Duration
+		batchExecCount int
 	)
 
 	// Parcourt chaque objet JSON du tableau
@@ -112,8 +115,12 @@ func decodeAndSend(limit int) error {
 		if limit > 0 && count >= limit {
 			break
 		}
-		// mv.Value est map[string]interface{}
-		raw := mv.Value.(map[string]interface{})
+
+		raw, ok := mv.Value.(map[string]interface{})
+		if !ok {
+			log.Println("Skipping non-object JSON value")
+			continue
+		}
 
 		// Extraction des champs
 		id, _ := raw["_id"].(string)
@@ -126,7 +133,6 @@ func decodeAndSend(limit int) error {
 				if aMap, ok := ai.(map[string]interface{}); ok {
 					idVal, hasID := aMap["_id"].(string)
 					nameVal, hasName := aMap["name"].(string)
-					// n'ajoute que si à la fois _id et name sont présents
 					if hasID && hasName && idVal != "" && nameVal != "" {
 						authors = append(authors, map[string]interface{}{"id": idVal, "name": nameVal})
 					}
@@ -135,10 +141,13 @@ func decodeAndSend(limit int) error {
 		}
 
 		// References
-		refsRaw, _ := raw["references"].([]interface{})
-		refs := make([]string, len(refsRaw))
-		for i, ri := range refsRaw {
-			refs[i] = ri.(string)
+		refs := make([]string, 0)
+		if rawRefs, ok := raw["references"].([]interface{}); ok {
+			for _, ri := range rawRefs {
+				if s, ok := ri.(string); ok {
+					refs = append(refs, s)
+				}
+			}
 		}
 
 		// Ajout au batch
@@ -152,27 +161,42 @@ func decodeAndSend(limit int) error {
 
 		// Envoi du batch dès qu'il atteint batchSize
 		if len(batch) == batchSize {
+			start := time.Now()
 			if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
 				return err
 			}
+			duration := time.Since(start)
+			totalDuration += duration
+			batchExecCount++
 			batch = batch[:0]
 		}
 	}
 
 	// Dernier batch
 	if len(batch) > 0 {
+		start := time.Now()
 		if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
 			return err
 		}
+		duration := time.Since(start)
+		totalDuration += duration
+		batchExecCount++
 	}
 
-	fmt.Printf("%d articles inserted.\n", count)
+	// Affichage des stats
+	if batchExecCount > 0 {
+		avg := totalDuration / time.Duration(batchExecCount)
+		fmt.Printf("%d articles inserted in %d batches. Average batch execution time: %s\n", count, batchExecCount, avg)
+	} else {
+		fmt.Printf("%d articles inserted. No batch executed.\n", count)
+	}
+
 	return nil
 }
 
 func main() {
 	start := time.Now()
-	limit := 1000
+	limit := -1
 
 	if err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json"); err != nil {
 		log.Fatal(err)
