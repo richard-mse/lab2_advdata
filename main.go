@@ -14,7 +14,7 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-const batchSize = 100
+const batchSize = 1000
 
 func ClearDatabase(ctx context.Context, session neo4j.SessionWithContext) error {
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
