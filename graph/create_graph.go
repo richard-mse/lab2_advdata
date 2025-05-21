@@ -11,6 +11,7 @@ UNWIND $batch AS doc
 MERGE (a:Article {_id: doc.id})
   ON CREATE SET a.title = doc.title
   ON MATCH  SET a.title = coalesce(a.title, doc.title)
+WITH a, doc
 CALL {
   WITH a, doc
   UNWIND doc.authors AS aut
@@ -19,6 +20,7 @@ CALL {
     ON MATCH  SET au.name = coalesce(au.name, aut.name)
   MERGE (au)-[:AUTHORED]->(a)
 }
+WITH a, doc
 CALL {
   WITH a, doc
   UNWIND doc.references AS refId
