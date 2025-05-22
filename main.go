@@ -62,7 +62,9 @@ func sanitizeMongoJSON(inputPath, outputPath string) error {
 }
 
 func decodeAndSend(limit int) error {
-	// Configuration Neo4j
+
+	ctx := context.Background()
+
 	uri := os.Getenv("NEO4J_URI")
 	if uri == "" {
 		uri = "bolt://graphdb:7687"
@@ -70,38 +72,44 @@ func decodeAndSend(limit int) error {
 	username := os.Getenv("NEO4J_USER")
 	password := os.Getenv("NEO4J_PASSWORD")
 
-	// Ouverture du fichier JSON
 	file, err := os.Open("data/sanitized.json")
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	// Initialise jstream pour lire chaque objet du tableau racine
 	dec := jstream.NewDecoder(file, 1)
 
-	// Connexion à Neo4j
 	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
 	if err != nil {
 		return fmt.Errorf("cannot create driver: %w", err)
 	}
-	defer driver.Close(context.Background())
+	defer driver.Close(ctx)
 
-	if err := driver.VerifyConnectivity(context.Background()); err != nil {
+	if err := driver.VerifyConnectivity(ctx); err != nil {
 		return fmt.Errorf("neo4j unreachable: %w", err)
 	}
 
-	session := driver.NewSession(context.Background(), neo4j.SessionConfig{
+	session := driver.NewSession(ctx, neo4j.SessionConfig{
 		AccessMode:   neo4j.AccessModeWrite,
 		DatabaseName: "neo4j",
 	})
-	defer session.Close(context.Background())
+	defer session.Close(ctx)
 
-	// Purge de la base
-	if err := ClearDatabase(context.Background(), session); err != nil {
+	if err := ClearDatabase(ctx, session); err != nil {
 		return err
 	}
 	log.Println("Clean database.")
+
+	if err := graph.EnsureArticleIndex(ctx, session); err != nil {
+		return err
+	}
+	log.Println("Create index article")
+
+	if err := graph.EnsureAuthorIndex(ctx, session); err != nil {
+		return err
+	}
+	log.Println("Create index author")
 
 	var (
 		count          int
@@ -150,7 +158,6 @@ func decodeAndSend(limit int) error {
 			}
 		}
 
-		// Ajout au batch
 		batch = append(batch, map[string]interface{}{
 			"id":         id,
 			"title":      title,
@@ -159,23 +166,22 @@ func decodeAndSend(limit int) error {
 		})
 		count++
 
-		// Envoi du batch dès qu'il atteint batchSize
 		if len(batch) == batchSize {
 			start := time.Now()
-			if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
+			if err := graph.CreateArticlesBatchInGraph(ctx, session, batch); err != nil {
 				return err
 			}
 			duration := time.Since(start)
 			totalDuration += duration
 			batchExecCount++
 			batch = batch[:0]
+			log.Println("Batch created")
 		}
 	}
 
-	// Dernier batch
 	if len(batch) > 0 {
 		start := time.Now()
-		if err := graph.CreateArticlesBatchInGraph(context.Background(), session, batch); err != nil {
+		if err := graph.CreateArticlesBatchInGraph(ctx, session, batch); err != nil {
 			return err
 		}
 		duration := time.Since(start)
@@ -183,7 +189,6 @@ func decodeAndSend(limit int) error {
 		batchExecCount++
 	}
 
-	// Affichage des stats
 	if batchExecCount > 0 {
 		avg := totalDuration / time.Duration(batchExecCount)
 		fmt.Printf("%d articles inserted in %d batches. Average batch execution time: %s\n", count, batchExecCount, avg)

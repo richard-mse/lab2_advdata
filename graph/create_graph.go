@@ -7,12 +7,6 @@ import (
 )
 
 const cypher = `
-CREATE RANGE INDEX article_id IF NOT EXISTS
-FOR (a:Article) ON (a._id);
-
-CREATE RANGE INDEX author_id IF NOT EXISTS
-FOR (au:Author) ON (au._id);
-
 UNWIND $batch AS doc
 
 MERGE (a:Article {_id: doc.id})
@@ -34,7 +28,6 @@ CALL {
   MERGE (r:Article {_id: refId})
   MERGE (a)-[:CITES]->(r)
 }
-
 `
 
 func CreateArticlesBatchInGraph(
@@ -47,9 +40,23 @@ func CreateArticlesBatchInGraph(
 		return nil
 	}
 
-	// recommandation : 500–2 000 docs/batch
 	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 		return tx.Run(ctx, cypher, map[string]interface{}{"batch": batch})
 	})
+
+	return err
+}
+
+func EnsureArticleIndex(ctx context.Context, session neo4j.SessionWithContext) error {
+	_, err := session.Run(ctx, `
+		CREATE RANGE INDEX article_id IF NOT EXISTS
+		FOR (a:Article) ON (a._id)`, nil)
+	return err
+}
+
+func EnsureAuthorIndex(ctx context.Context, session neo4j.SessionWithContext) error {
+	_, err := session.Run(ctx, `
+		CREATE RANGE INDEX author_id IF NOT EXISTS
+		FOR (au:Author) ON (au._id)`, nil)
 	return err
 }
