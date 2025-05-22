@@ -7,26 +7,34 @@ import (
 )
 
 const cypher = `
+CREATE RANGE INDEX article_id IF NOT EXISTS
+FOR (a:Article) ON (a._id);
+
+CREATE RANGE INDEX author_id IF NOT EXISTS
+FOR (au:Author) ON (au._id);
+
 UNWIND $batch AS doc
+
 MERGE (a:Article {_id: doc.id})
   ON CREATE SET a.title = doc.title
-  ON MATCH  SET a.title = coalesce(a.title, doc.title)
 WITH a, doc
+
 CALL {
   WITH a, doc
   UNWIND doc.authors AS aut
   MERGE (au:Author {_id: aut.id})
     ON CREATE SET au.name = aut.name
-    ON MATCH  SET au.name = coalesce(au.name, aut.name)
   MERGE (au)-[:AUTHORED]->(a)
 }
 WITH a, doc
+
 CALL {
   WITH a, doc
   UNWIND doc.references AS refId
   MERGE (r:Article {_id: refId})
   MERGE (a)-[:CITES]->(r)
 }
+
 `
 
 func CreateArticlesBatchInGraph(
