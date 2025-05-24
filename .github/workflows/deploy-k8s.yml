@@ -39,7 +39,6 @@ jobs:
         run: |
           kubectl -n $KUBE_NAMESPACE delete -f ./deployment-neo4j.yml --kubeconfig=.kube/config.yml --ignore-not-found
           kubectl -n $KUBE_NAMESPACE delete -f ./neo4j-service.yml   --kubeconfig=.kube/config.yml --ignore-not-found
-          kubectl -n $KUBE_NAMESPACE delete -f ./ingress.yml --kubeconfig=.kube/config.yml --ignore-not-found
           kubectl -n $KUBE_NAMESPACE delete -f ./job-db-populator.yml --kubeconfig=.kube/config.yml --ignore-not-found
 
 
@@ -47,5 +46,4 @@ jobs:
         run: |
           kubectl -n $KUBE_NAMESPACE apply -f ./deployment-neo4j.yml --kubeconfig=.kube/config.yml
           kubectl -n $KUBE_NAMESPACE apply -f ./neo4j-service.yml --kubeconfig=.kube/config.yml
-          kubectl -n $KUBE_NAMESPACE apply -f ./ingress.yml --kubeconfig=.kube/config.yml
           kubectl -n $KUBE_NAMESPACE apply -f ./job-db-populator.yml --kubeconfig=.kube/config.yml

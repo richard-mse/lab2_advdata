@@ -28,6 +28,3 @@ spec:
               value: neo4j
             - name: NEO4J_PASSWORD
               value: testtest
-          resources:
-              limits:
-                memory: "3Gi"
