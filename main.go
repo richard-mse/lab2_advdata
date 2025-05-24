@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bcicen/jstream"
+	"github.com/cavaliergopher/grab/v3"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -199,22 +200,42 @@ func decodeAndSend(limit int) error {
 	return nil
 }
 
+func downloadJSON() (string, error) {
+	url := "http://vmrum.isc.heia-fr.ch/test.json"
+
+	resp, err := grab.Get("./data/", url)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("File downloaded to", resp.Filename)
+	return resp.Filename, nil
+}
+
 func main() {
 	start := time.Now()
 	limit := -1
 
-	if err := sanitizeMongoJSON("data/unsanitized.json", "data/sanitized.json"); err != nil {
-		log.Fatal(err)
-	}
-	step := time.Since(start)
-
-	err := decodeAndSend(limit)
+	jsonFilename, err := downloadJSON()
 	if err != nil {
 		log.Fatal(err)
 	}
+	downloadDuration := time.Since(start)
 
-	fmt.Printf("Sanitization time: %.2f seconds\n", step.Seconds())
+	if err := sanitizeMongoJSON(jsonFilename, "data/sanitized.json"); err != nil {
+		log.Fatal(err)
+	}
+	sanitizingDuration := time.Since(start) - downloadDuration
+
+	err = decodeAndSend(limit)
+	if err != nil {
+		log.Fatal(err)
+	}
+	dbWriteDuration := time.Since(start) - downloadDuration - sanitizingDuration
 	duration := time.Since(start)
-	fmt.Printf("Population time: %.2f seconds\n", duration.Seconds()-step.Seconds())
-	fmt.Printf("TOtal execution time: %.2f seconds\n", duration.Seconds())
+
+	fmt.Printf("Download time        : %.2f seconds\n", downloadDuration.Seconds())
+	fmt.Printf("Sanitization time    : %.2f seconds\n", sanitizingDuration.Seconds())
+	fmt.Printf("Population time      : %.2f seconds\n", dbWriteDuration.Seconds())
+	fmt.Printf("total execution time : %.2f seconds\n", duration.Seconds())
 }

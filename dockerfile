@@ -10,4 +10,4 @@ COPY go.mod go.sum main.go entrypoint.sh ./
 RUN go mod tidy && \
 chmod +x entrypoint.sh
 
-CMD ["/bin/bash", "entrypoint.sh"]
+ENTRYPOINT ["go", "run", "."]
