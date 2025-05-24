@@ -1,7 +1,7 @@
 #!/bin/sh
 mkdir data
 cd data
-wget http://vmrum.isc.heia-fr.ch/dblpv14.json
+wget http://vmrum.isc.heia-fr.ch/dblpv13.json
 mv dblpv14.json unsanitized.json
 cd ..
 go run .
